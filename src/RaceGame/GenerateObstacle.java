@@ -26,7 +26,6 @@ public class GenerateObstacle {
     public static void addObstacleMovement(JLabel obstacle, int x, JLabel car) {
         if (Window.checkAlive()) {
 
-
             Thread thread1 = new Thread() {
                 public void run() {
                     Dimension parentSize = car.getParent().getSize();

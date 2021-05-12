@@ -21,30 +21,83 @@ import java.util.Enumeration;
 public class Window extends Thread {
     private static JFrame frame;
     private static JLabel car;
-    private int first = 0;
+    private static int first = 0;
     private int firstTime = 0;
     private static JMenu lives;
     private static int lifeCount = 3;
-    private JMenu time;
-    private JPanel menuPanel;
-    private JMenu menu;
+    private static JMenu time;
+    private static JPanel menuPanel;
+    private static JMenu menu;
     private final Date start = new Date();
     private static int pause;
     private static boolean alive;
+    public static JPanel homePanel;
 
 
     public Window() {
         //initialisatie van het scherm
+
+    }
+
+    public static int getPause() {
+        return pause;
+    }
+
+    public static void setUIFont(javax.swing.plaf.FontUIResource f) {
+        Enumeration<Object> keys = UIManager.getDefaults().keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            Object value = UIManager.get(key);
+            if (value instanceof javax.swing.plaf.FontUIResource)
+                UIManager.put(key, f);
+        }
+    }
+
+    public static void depleteLives(){
+        lifeCount--;
+
+        if (lifeCount < 1){
+            alive = false;
+            lives.setText("x0");
+            System.out.println("dead");
+        } else {
+            lives.setText("x" + lifeCount);
+        }
+    }
+
+    public static void init(){
+        frame = new JFrame("Super coole race game :O");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setUIFont(new FontUIResource("Calibri", Font.BOLD, 16));
+        frame.setSize(600, 800);
+        frame.setLocationByPlatform(true);
+        frame.setResizable(false);
+        frame.setLayout(null);
+
+        homePanel = new JPanel();
+        homePanel.setSize(600,800);
+        homePanel.setLayout(null);
+        frame.add(homePanel);
+
+        JButton startButton = new JButton("Start");
+        startButton.setBounds(200,200,200,100);
+        startButton.setFont(new FontUIResource("Calibri", Font.BOLD, 32));
+        homePanel.add(startButton);
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                homePanel.setVisible(false);
+                startGame();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    public static void addGameItems(){
         try {
-
-            frame = new JFrame("Super coole race game :O");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            setUIFont(new FontUIResource("Calibri", Font.BOLD, 16));
-
-
             JMenuBar menuBar = new JMenuBar();
             menuBar.setSize(600, 200);
-
 
             time = new JMenu("time: 00:00");
             menuBar.add(time);
@@ -150,62 +203,37 @@ public class Window extends Thread {
                 }
             });
 
-            frame.setSize(600, 800);
-            frame.setLocationByPlatform(true);
-            frame.setResizable(false);
-            frame.setLayout(null);
-            frame.setVisible(true);
+
         } catch (IOException e) {
             System.out.println("Error!");
             System.out.println(e);
         }
     }
 
-    public static int getPause() {
-        return pause;
-    }
-
-    public static void setUIFont(javax.swing.plaf.FontUIResource f) {
-        Enumeration<Object> keys = UIManager.getDefaults().keys();
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            Object value = UIManager.get(key);
-            if (value instanceof javax.swing.plaf.FontUIResource)
-                UIManager.put(key, f);
-        }
-    }
-
-    public static void depleteLives(){
-        lifeCount--;
-
-        if (lifeCount < 1){
-            alive = false;
-            lives.setText("x0");
-            System.out.println("dead");
-        } else {
-            lives.setText("x" + lifeCount);
-        }
-    }
-
     public static void startGame(){
-        Window scherm = new Window();
-        // Start de timer
-        scherm.start();
+        addGameItems();
         alive = true;
-        while (true) {
+
+        while (alive) {
+            try {
+                System.out.println("sleeping");
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             if (checkAlive()){
-                if (Window.getPause() == 0) {
+                if (getPause() == 0) {
+                    System.out.println("2");
 
 
                     try {
                         GenerateObstacle g = new GenerateObstacle();
                         BufferedImage component = g.generate();
-                        scherm.addNewComponent(new ImageIcon(component));
+                        Window.addNewComponent(new ImageIcon(component));
 
                         if (!checkAlive()){
                             endGame();
                         }
-
 
                         Thread.sleep(1000);
                     } catch (Exception e) {
@@ -233,6 +261,7 @@ public class Window extends Thread {
     public void run() {
         while (true) {
             int pauseState = Window.getPause();
+
             while (pauseState == 1) {
                 try {
                     start.setTime(start.getTime() + 100);
@@ -302,7 +331,7 @@ public class Window extends Thread {
         }
     }
 
-    public void addNewComponent(ImageIcon icon) {
+    public static void addNewComponent(ImageIcon icon) {
         int x = (int) Math.floor(Math.random() * (600 + 1)) - 50;
         int y = 0;
         if (first == 0) {
