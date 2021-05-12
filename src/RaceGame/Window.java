@@ -3,6 +3,9 @@ package RaceGame;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,118 +19,141 @@ import java.util.Date;
 import java.util.Enumeration;
 
 public class Window extends Thread {
-    public JFrame frame;
-    public JPanel content;
-    public static JLabel car;
-    public int first = 0;
-    public int firstTime = 0;
-    public JLabel livesLabel;
-    public int lives;
-    public JLabel time;
-    public JPanel topbar;
-    public JPanel menuPanel;
-    public Date start = new Date();
-    public String timeNow;
-    public JButton menu;
-    public static int pause;
+    private static JFrame frame;
+    private static JLabel car;
+    private int first = 0;
+    private int firstTime = 0;
+    private static JMenu lives;
+    private static int lifeCount = 3;
+    private JMenu time;
+    private JPanel menuPanel;
+    private JMenu menu;
+    private final Date start = new Date();
+    private static int pause;
+    private static boolean alive;
+
 
     public Window() {
-        content = new JPanel();
         //initialisatie van het scherm
         try {
 
             frame = new JFrame("Super coole race game :O");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            setUIFont(new javax.swing.plaf.FontUIResource("Calibri", Font.BOLD, 16));
+            setUIFont(new FontUIResource("Calibri", Font.BOLD, 16));
 
-            topbar = new JPanel();
-            topbar.setBounds(-1, -1, 600, 100);
-            Border b = BorderFactory.createLineBorder(Color.BLACK, 1);
-            topbar.setBorder(b);
-            topbar.setBackground(Color.WHITE);
-            topbar.setOpaque(true);
-            topbar.setLayout(new GridLayout(1, 6));
 
-            frame.add(topbar);
-            start = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
-            time = new JLabel("");
-            topbar.add(time);
+            JMenuBar menuBar = new JMenuBar();
+            menuBar.setSize(600, 200);
 
-            BufferedImage image = ImageIO.read(new File("src/RaceGame/images/car.png"));
-            car = new JLabel(new ImageIcon(image));
-            JButton left = new JButton();
+
+            time = new JMenu("time: 00:00");
+            menuBar.add(time);
+            time.setFocusable(false);
+            menuBar.add(Box.createHorizontalGlue());
 
             BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
             JLabel heart = new JLabel(new ImageIcon(heartImg));
             heart.setBounds(2, 2, 60, 51);
-            topbar.add(heart);
+            menuBar.add(heart);
+            heart.setFocusable(false);
 
-            lives = 3;
-            livesLabel = new JLabel("x " + lives);
-            topbar.add(livesLabel);
-            livesLabel.setLocation(-50, 5);
+            lives = new JMenu("x3");
+            menuBar.add(lives);
+            lives.setFocusable(false);
 
-            JLabel divider = new JLabel("");
-            topbar.add(divider);
-
-            menu = new JButton("Menu");
-            topbar.add(menu);
-            menu.setFocusable(false);
-            menuPanel = new JPanel();
-            menuPanel.setSize(200, 200);
-            menuPanel.setLocation(390, 98);
-            menuPanel.setBackground(Color.WHITE);
-            menuPanel.setBorder(b);
-            menuPanel.setVisible(false);
-            frame.add(menuPanel);
-
-            //frame.setComponentZOrder(menuPanel, 1);
-            menu.addActionListener(new ActionListener() {
+            menu = new JMenu("Menu");
+            menu.addMenuListener(new MenuListener() {
                 @Override
-                public void actionPerformed(ActionEvent e) {
+                public void menuSelected(MenuEvent e) {
+                    System.out.println("c");
                     if (getPause() == 0) {
                         pause++;
                         menuPanel.setVisible(true);
-                        frame.repaint();
+                        menuPanel.requestFocusInWindow();
+
                     } else if (getPause() == 1) {
                         pause--;
                         menuPanel.setVisible(false);
-                        frame.repaint();
+
                     }
 
                 }
+
+                @Override
+                public void menuDeselected(MenuEvent e) {
+                }
+
+                @Override
+                public void menuCanceled(MenuEvent e) {
+
+                }
+
+
             });
 
-            topbar.add(divider);
+            menuBar.add(Box.createHorizontalGlue());
+            menuBar.add(menu);
 
-            left.setOpaque(false);
-            left.setContentAreaFilled(false);
-            left.setBorderPainted(false);
+            frame.setJMenuBar(menuBar);
 
-            frame.add(car);
-            car.setBounds(250, 520, image.getWidth(), image.getHeight());
+            BufferedImage image = ImageIO.read(new File("src/RaceGame/images/car.png"));
+            car = new JLabel(new ImageIcon(image));
+            JButton controls = new JButton();
 
-            frame.add(left);
-            left.setBounds(0, 0, 100, 100);
-            left.addKeyListener(new KeyAdapter() {
+            controls.setOpaque(false);
+            controls.setContentAreaFilled(false);
+            controls.setBorderPainted(false);
+            frame.add(controls);
+
+            controls.setBounds(0, 0, 100, 100);
+            controls.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyEvent.VK_LEFT) {
                         move(-10, 0, pause);
 
-
                     } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
                         move(10, 0, pause);
-
 
                     }
                 }
             });
+
+            frame.add(car);
+            car.setBounds(250, 460, image.getWidth(), image.getHeight());
+
+            menuPanel = new JPanel();
+            menuPanel.setBounds(400,0,200,200);
+            menuPanel.setBackground(Color.GREEN);
+            Border blackline = BorderFactory.createLineBorder(Color.black);
+            menuPanel.setBorder(blackline);
+            menuPanel.setVisible(false);
+            menuPanel.setLayout(null);
+            frame.add(menuPanel);
+
+            JButton a = new JButton("X");
+            a.setBounds(130,10,45,30);
+            menuPanel.add(a);
+            a.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (getPause() == 0) {
+                        pause++;
+                        menuPanel.setVisible(true);
+                        menuPanel.requestFocusInWindow();
+
+                    } else if (getPause() == 1) {
+                        pause--;
+                        menuPanel.setVisible(false);
+
+                    }
+                }
+            });
+
             frame.setSize(600, 800);
             frame.setLocationByPlatform(true);
             frame.setResizable(false);
-
+            frame.setLayout(null);
             frame.setVisible(true);
         } catch (IOException e) {
             System.out.println("Error!");
@@ -149,6 +175,59 @@ public class Window extends Thread {
         }
     }
 
+    public static void depleteLives(){
+        lifeCount--;
+
+        if (lifeCount < 1){
+            alive = false;
+            lives.setText("x0");
+            System.out.println("dead");
+        } else {
+            lives.setText("x" + lifeCount);
+        }
+    }
+
+    public static void startGame(){
+        Window scherm = new Window();
+        // Start de timer
+        scherm.start();
+        alive = true;
+        while (true) {
+            if (checkAlive()){
+                if (Window.getPause() == 0) {
+
+
+                    try {
+                        GenerateObstacle g = new GenerateObstacle();
+                        BufferedImage component = g.generate();
+                        scherm.addNewComponent(new ImageIcon(component));
+
+                        if (!checkAlive()){
+                            endGame();
+                        }
+
+
+                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+            } else {
+                endGame();
+            }
+
+        }
+    }
+
+    public static void endGame(){
+        car.setVisible(false);
+    }
+
+
+    public static boolean checkAlive() {
+        return alive;
+    }
+
     // zorgt ervoor dat de tijd wordt bijgehouden en dat deze update
     @Override
     public void run() {
@@ -166,7 +245,7 @@ public class Window extends Thread {
             try {
                 Date now = new Date();
                 SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
-                timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
+                String timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
                 setTime(timeNow);
                 Thread.sleep(1000);
 
@@ -181,23 +260,16 @@ public class Window extends Thread {
     //Deze methode i.p.v setText(), omdat revalidate() ervoor zorgt dat de obstacles niet goed meer werken.
 
     public void setTime(String t) {
-        System.out.println(t);
+        if (checkAlive())
         if (firstTime > 0) {
-            topbar.remove(time);
             try {
-                time = new JLabel("time: " + t);
-                topbar.add(time);
-                time.setBounds(25, 40, 100, 20);
-
+                time.setText("time: " + t);
             } catch (Exception e) {
                 System.out.println(e);
             }
-            topbar.repaint();
         } else {
             firstTime++;
-
         }
-
 
     }
 

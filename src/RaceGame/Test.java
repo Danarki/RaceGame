@@ -17,8 +17,9 @@ public class Test extends Thread {
 
     public static JFrame frame;
     public JPanel content;
-    public static JLabel time;
     public static JMenuBar topbar;
+    public static JMenu lives;
+    public static JMenu time;
     public Date start = new Date();
 
     public Test() {
@@ -35,15 +36,24 @@ public class Test extends Thread {
             JMenuBar mb = new JMenuBar();
             mb.setSize(600, 200);
             menu = new JMenu("Menu");
+
+            time = new JMenu("time: 00:00");
+            mb.add(time);
+
             BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
             JLabel heart = new JLabel(new ImageIcon(heartImg));
             heart.setBounds(2, 2, 60, 51);
             mb.add(heart);
 
+            lives = new JMenu("x3");
+            mb.add(lives);
+
             mb.add(menu);
             frame.setJMenuBar(mb);
-            frame.setSize(400, 400);
-            frame.setLayout(null);
+            frame.setSize(600, 800);
+            frame.setLocationByPlatform(true);
+            frame.setResizable(false);
+
             frame.setVisible(true);
         }
             catch (Exception e) {
@@ -53,7 +63,15 @@ public class Test extends Thread {
     }
 
     public static void main(String[] args) {
+
         Test window = new Test();
+
+        try {
+            Thread.sleep(3000);
+            lives.setText("x2");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 
