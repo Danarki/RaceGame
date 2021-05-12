@@ -3,12 +3,17 @@ package RaceGame;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Time;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class GenerateObstacle {
 
+    // maakt een obstacle aan
     public BufferedImage generate() {
         int rand = (int) Math.floor(Math.random() * 4);
         Obstacle o = new Obstacle(rand);
@@ -17,7 +22,9 @@ public class GenerateObstacle {
     }
 
 
-    public static void addObstacleMovement(JLabel obstacle, int x, int y, JLabel car) {
+    //voegt de beweging toe aan het aangemaakte obstacle
+    public static void addObstacleMovement(JLabel obstacle, int x, JLabel car) {
+
         Thread thread1 = new Thread() {
             public void run() {
                 Dimension parentSize = car.getParent().getSize();
@@ -25,6 +32,15 @@ public class GenerateObstacle {
                 int componentHeight = obstacle.getSize().height;
                 boolean looper = true;
                 while (looper) {
+                    int pauseState = Window.getPause();
+                    while (pauseState == 1){
+                        try {
+                            Thread.sleep(100);
+                            pauseState = Window.getPause();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     int nextY = Math.max(obstacle.getLocation().y + 10, 0);
 
                     if (nextY - componentHeight > parentHeight - componentHeight) {
@@ -38,7 +54,7 @@ public class GenerateObstacle {
 
                     obstacle.setLocation(x, nextY);
 
-                    int carX= car.getX();
+                    int carX = car.getX();
                     int carY = car.getY();
                     int carWidth = car.getWidth();
                     int carHeigth = car.getHeight();
@@ -47,9 +63,9 @@ public class GenerateObstacle {
                     int obstacleWidth = obstacle.getWidth();
                     int obstacleHeigth = obstacle.getHeight();
 
-                    boolean detect = this.collisionDetect(carX, carY, carWidth,carHeigth,obstacleX,obstacleY,obstacleWidth,obstacleHeigth);
+                    boolean detect = this.collisionDetect(carX, carY, carWidth, carHeigth, obstacleX, obstacleY, obstacleWidth, obstacleHeigth);
 
-                    if (detect){
+                    if (detect) {
                         looper = false;
                         Container parent = obstacle.getParent();
                         parent.remove(obstacle);
@@ -77,9 +93,10 @@ public class GenerateObstacle {
                         e.printStackTrace();
                     }
                 }
-
             }
-            private boolean collisionDetect(int carX, int carY, int carWidth, int carHeigth, int obstacleX, int obstacleY, int obstacleWidth, int obstacleHeight){
+
+
+            private boolean collisionDetect(int carX, int carY, int carWidth, int carHeigth, int obstacleX, int obstacleY, int obstacleWidth, int obstacleHeight) {
                 return carX < obstacleX + obstacleWidth &&
                         carX + carWidth > obstacleX &&
                         carY < obstacleY + obstacleHeight &&
