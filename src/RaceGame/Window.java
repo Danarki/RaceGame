@@ -32,12 +32,149 @@ public class Window extends Thread {
     private static int pause;
     private static boolean alive;
     public static JPanel homePanel;
+    private static boolean invincibleState = false;
+    private static final Thread game = new Thread() {
+        public void run() {
+
+            try {
+                JMenuBar menuBar = new JMenuBar();
+                menuBar.setSize(600, 200);
+
+                time = new JMenu("time: 00:00");
+                menuBar.add(time);
+                time.setFocusable(false);
+                menuBar.add(Box.createHorizontalGlue());
+
+                BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
+                JLabel heart = new JLabel(new ImageIcon(heartImg));
+                heart.setBounds(2, 2, 60, 51);
+                menuBar.add(heart);
+                heart.setFocusable(false);
+
+                lives = new JMenu("x3");
+                menuBar.add(lives);
+                lives.setFocusable(false);
+
+                menu = new JMenu("Menu");
+                menu.addMenuListener(new MenuListener() {
+                    @Override
+                    public void menuSelected(MenuEvent e) {
+                        if (getPause() == 0) {
+                            pause++;
+                            menuPanel.setVisible(true);
+                            menuPanel.requestFocusInWindow();
+
+                        } else if (getPause() == 1) {
+                            pause--;
+                            menuPanel.setVisible(false);
+
+                        }
+
+                    }
+
+                    @Override
+                    public void menuDeselected(MenuEvent e) {
+                    }
+
+                    @Override
+                    public void menuCanceled(MenuEvent e) {
+
+                    }
 
 
-    public Window() {
-        //initialisatie van het scherm
+                });
 
-    }
+                menuBar.add(Box.createHorizontalGlue());
+                menuBar.add(menu);
+
+                frame.setJMenuBar(menuBar);
+
+                BufferedImage image = ImageIO.read(new File("src/RaceGame/images/car.png"));
+                car = new JLabel(new ImageIcon(image));
+
+                KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                        .addKeyEventDispatcher(new KeyEventDispatcher() {
+                            @Override
+                            public boolean dispatchKeyEvent(KeyEvent e) {
+                                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                                    move(-10, 0, pause);
+
+                                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                                    move(10, 0, pause);
+
+                                }
+                                return false;
+                            }
+                        });
+
+
+                frame.add(car);
+                car.setBounds(250, 460, image.getWidth(), image.getHeight());
+
+                menuPanel = new JPanel();
+                menuPanel.setBounds(400, 0, 200, 200);
+                menuPanel.setBackground(Color.GREEN);
+                Border blackline = BorderFactory.createLineBorder(Color.black);
+                menuPanel.setBorder(blackline);
+                menuPanel.setVisible(false);
+                menuPanel.setLayout(null);
+                frame.add(menuPanel);
+
+                JButton a = new JButton("X");
+                a.setBounds(130, 10, 45, 30);
+                menuPanel.add(a);
+                a.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (getPause() == 0) {
+                            pause++;
+                            menuPanel.setVisible(true);
+                            menuPanel.requestFocusInWindow();
+
+                        } else if (getPause() == 1) {
+                            pause--;
+                            menuPanel.setVisible(false);
+
+                        }
+                    }
+                });
+
+            } catch (IOException e) {
+                System.out.println("Error!");
+                System.out.println(e);
+            }
+            System.out.println("a");
+            alive = true;
+            //fixes the topbar
+            lives.setText("x3 ");
+            car.repaint();
+
+            Window s = new Window();
+            s.start();
+
+            while (alive) {
+                if (checkAlive()) {
+                    if (getPause() == 0) {
+                        try {
+                            GenerateObstacle g = new GenerateObstacle();
+                            BufferedImage component = g.generate();
+                            Window.addNewComponent(new ImageIcon(component));
+
+                            if (!checkAlive()) {
+                                endGame();
+                            }
+
+                            //Thread.sleep(500);
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                } else {
+                    endGame();
+                }
+            }
+        }
+    };
 
     public static int getPause() {
         return pause;
@@ -53,19 +190,8 @@ public class Window extends Thread {
         }
     }
 
-    public static void depleteLives(){
-        lifeCount--;
 
-        if (lifeCount < 1){
-            alive = false;
-            lives.setText("x0");
-            System.out.println("dead");
-        } else {
-            lives.setText("x" + lifeCount);
-        }
-    }
-
-    public static void init(){
+    public static void init() {
         frame = new JFrame("Super coole race game :O");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setUIFont(new FontUIResource("Calibri", Font.BOLD, 16));
@@ -75,12 +201,12 @@ public class Window extends Thread {
         frame.setLayout(null);
 
         homePanel = new JPanel();
-        homePanel.setSize(600,800);
+        homePanel.setSize(600, 800);
         homePanel.setLayout(null);
         frame.add(homePanel);
 
         JButton startButton = new JButton("Start");
-        startButton.setBounds(200,200,200,100);
+        startButton.setBounds(200, 200, 200, 100);
         startButton.setFont(new FontUIResource("Calibri", Font.BOLD, 32));
         homePanel.add(startButton);
         startButton.addActionListener(new ActionListener() {
@@ -94,160 +220,11 @@ public class Window extends Thread {
         frame.setVisible(true);
     }
 
-    public static void addGameItems(){
-        try {
-            JMenuBar menuBar = new JMenuBar();
-            menuBar.setSize(600, 200);
-
-            time = new JMenu("time: 00:00");
-            menuBar.add(time);
-            time.setFocusable(false);
-            menuBar.add(Box.createHorizontalGlue());
-
-            BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
-            JLabel heart = new JLabel(new ImageIcon(heartImg));
-            heart.setBounds(2, 2, 60, 51);
-            menuBar.add(heart);
-            heart.setFocusable(false);
-
-            lives = new JMenu("x3");
-            menuBar.add(lives);
-            lives.setFocusable(false);
-
-            menu = new JMenu("Menu");
-            menu.addMenuListener(new MenuListener() {
-                @Override
-                public void menuSelected(MenuEvent e) {
-                    System.out.println("c");
-                    if (getPause() == 0) {
-                        pause++;
-                        menuPanel.setVisible(true);
-                        menuPanel.requestFocusInWindow();
-
-                    } else if (getPause() == 1) {
-                        pause--;
-                        menuPanel.setVisible(false);
-
-                    }
-
-                }
-
-                @Override
-                public void menuDeselected(MenuEvent e) {
-                }
-
-                @Override
-                public void menuCanceled(MenuEvent e) {
-
-                }
-
-
-            });
-
-            menuBar.add(Box.createHorizontalGlue());
-            menuBar.add(menu);
-
-            frame.setJMenuBar(menuBar);
-
-            BufferedImage image = ImageIO.read(new File("src/RaceGame/images/car.png"));
-            car = new JLabel(new ImageIcon(image));
-            JButton controls = new JButton();
-
-            controls.setOpaque(false);
-            controls.setContentAreaFilled(false);
-            controls.setBorderPainted(false);
-            frame.add(controls);
-
-            controls.setBounds(0, 0, 100, 100);
-            controls.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                        move(-10, 0, pause);
-
-                    } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                        move(10, 0, pause);
-
-                    }
-                }
-            });
-
-            frame.add(car);
-            car.setBounds(250, 460, image.getWidth(), image.getHeight());
-
-            menuPanel = new JPanel();
-            menuPanel.setBounds(400,0,200,200);
-            menuPanel.setBackground(Color.GREEN);
-            Border blackline = BorderFactory.createLineBorder(Color.black);
-            menuPanel.setBorder(blackline);
-            menuPanel.setVisible(false);
-            menuPanel.setLayout(null);
-            frame.add(menuPanel);
-
-            JButton a = new JButton("X");
-            a.setBounds(130,10,45,30);
-            menuPanel.add(a);
-            a.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (getPause() == 0) {
-                        pause++;
-                        menuPanel.setVisible(true);
-                        menuPanel.requestFocusInWindow();
-
-                    } else if (getPause() == 1) {
-                        pause--;
-                        menuPanel.setVisible(false);
-
-                    }
-                }
-            });
-
-
-        } catch (IOException e) {
-            System.out.println("Error!");
-            System.out.println(e);
-        }
+    public static void startGame() {
+        game.start();
     }
 
-    public static void startGame(){
-        addGameItems();
-        alive = true;
-
-        while (alive) {
-            try {
-                System.out.println("sleeping");
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (checkAlive()){
-                if (getPause() == 0) {
-                    System.out.println("2");
-
-
-                    try {
-                        GenerateObstacle g = new GenerateObstacle();
-                        BufferedImage component = g.generate();
-                        Window.addNewComponent(new ImageIcon(component));
-
-                        if (!checkAlive()){
-                            endGame();
-                        }
-
-                        Thread.sleep(1000);
-                    } catch (Exception e) {
-                        System.out.println(e);
-                    }
-                }
-            } else {
-                endGame();
-            }
-
-        }
-    }
-
-    public static void endGame(){
+    public static void endGame() {
         car.setVisible(false);
     }
 
@@ -290,15 +267,15 @@ public class Window extends Thread {
 
     public void setTime(String t) {
         if (checkAlive())
-        if (firstTime > 0) {
-            try {
-                time.setText("time: " + t);
-            } catch (Exception e) {
-                System.out.println(e);
+            if (firstTime > 0) {
+                try {
+                    time.setText("time: " + t);
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            } else {
+                firstTime++;
             }
-        } else {
-            firstTime++;
-        }
 
     }
 
@@ -344,10 +321,60 @@ public class Window extends Thread {
             label.setBounds(x, y, icon.getIconWidth(), icon.getIconHeight());
             GenerateObstacle.addObstacleMovement(label, x, car);
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1750);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static boolean getInvincibleState() {
+        return invincibleState;
+    }
+
+    public static void invincibile(){
+        Thread invincible = new Thread(){
+            public void run() {
+                try {
+                    invincibleState = true;
+                    car.setVisible(false);
+                    Thread.sleep(250);
+                    car.setVisible(true);
+                    Thread.sleep(250);
+                    car.setVisible(false);
+                    Thread.sleep(250);
+                    car.setVisible(true);
+                    Thread.sleep(250);
+                    car.setVisible(false);
+                    Thread.sleep(250);
+                    car.setVisible(true);
+                    Thread.sleep(250);
+                    car.setVisible(false);
+                    Thread.sleep(250);
+                    car.setVisible(true);
+                    Thread.sleep(250);
+                    invincibleState = false;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        if (lifeCount > 0){
+            invincible.start();
+
+        }
+    }
+
+    public static void depleteLives() {
+        lifeCount--;
+
+        if (lifeCount < 1) {
+            alive = false;
+            lives.setText("x0");
+            System.out.println("dead");
+        } else {
+            lives.setText("x" + lifeCount);
         }
     }
 }

@@ -66,7 +66,7 @@ public class GenerateObstacle {
 
                         boolean detect = this.collisionDetect(carX, carY, carWidth, carHeigth, obstacleX, obstacleY, obstacleWidth, obstacleHeigth);
 
-                        if (detect || !Window.checkAlive()) {
+                        if (detect && !Window.getInvincibleState() || !Window.checkAlive()) {
                             looper = false;
                             Container parent = obstacle.getParent();
                             parent.remove(obstacle);
@@ -77,10 +77,12 @@ public class GenerateObstacle {
                                 car.getParent().add(explode);
                                 explode.setBounds(car.getX() - 20, car.getY() - 100, explosion.getWidth(), explosion.getHeight());
                                 try {
+                                    Window.depleteLives();
+                                    Window.invincibile();
                                     Thread.sleep(1000);
                                     car.getParent().remove(explode);
                                     car.getParent().repaint();
-                                    Window.depleteLives();
+
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
