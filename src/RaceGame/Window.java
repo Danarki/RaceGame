@@ -9,11 +9,12 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
@@ -28,11 +29,13 @@ public class Window extends Thread {
     private static JMenu time;
     private static JPanel menuPanel;
     private static JMenu menu;
-    private final Date start = new Date();
+    private static Date start;
     private static int pause;
     private static boolean alive;
     public static JPanel homePanel;
     private static boolean invincibleState = false;
+    private static int ended = 0;
+    private static JTextField nameField;
     private static final Thread game = new Thread() {
         public void run() {
 
@@ -112,11 +115,28 @@ public class Window extends Thread {
                 car.setBounds(250, 460, image.getWidth(), image.getHeight());
 
                 menuPanel = new JPanel();
-                menuPanel.setBounds(400, 0, 200, 200);
-                menuPanel.setBackground(Color.GREEN);
+                menuPanel.setBounds(200, 0, 400, 200);
+                menuPanel.setBackground(Color.WHITE);
                 Border blackline = BorderFactory.createLineBorder(Color.black);
                 menuPanel.setBorder(blackline);
                 menuPanel.setVisible(false);
+                ResultSet rs = SQL.select();
+                int count = 1;
+                while (true) {
+                    assert rs != null;
+                    if (!rs.next()) break;
+                    if (count < 6) {
+                        System.out.println(rs.getString(2));
+                        String name = rs.getString(2);
+                        String score = String.valueOf(rs.getInt(3));
+                        String date = String.valueOf(rs.getDate(4));
+                        JLabel plate = new JLabel(count + ". " + name + " | " + score + " | " + date);
+                        menuPanel.add(plate);
+                        plate.setBounds(10, count * 20, 400, 100);
+                        count++;
+                    }
+                }
+
                 menuPanel.setLayout(null);
                 frame.add(menuPanel);
 
@@ -139,12 +159,13 @@ public class Window extends Thread {
                     }
                 });
 
-            } catch (IOException e) {
+            } catch (IOException | SQLException e) {
                 System.out.println("Error!");
                 System.out.println(e);
             }
             System.out.println("a");
             alive = true;
+
             //fixes the topbar
             lives.setText("x3 ");
             car.repaint();
@@ -154,6 +175,8 @@ public class Window extends Thread {
 
             while (alive) {
                 if (checkAlive()) {
+                    System.out.println(getPause());
+
                     if (getPause() == 0) {
                         try {
                             GenerateObstacle g = new GenerateObstacle();
@@ -175,6 +198,31 @@ public class Window extends Thread {
             }
         }
     };
+
+    public static void startGame() {
+        start = new Date();
+        game.start();
+    }
+
+    public static void endGame() {
+        if (ended == 0) {
+            car.setVisible(false);
+            Date now = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("ss");
+            String timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
+            Integer seconds1 = Integer.parseInt(timeNow);
+            sdf = new SimpleDateFormat("mm");
+            timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
+            Integer seconds2 = Integer.parseInt(timeNow) * 60;
+
+            int totalseconds = seconds1 + seconds2;
+
+            Integer score = totalseconds * 100;
+            String name = String.valueOf(nameField.getText());
+            SQL.insert(name, score);
+            ended++;
+        }
+    }
 
     public static int getPause() {
         return pause;
@@ -205,27 +253,42 @@ public class Window extends Thread {
         homePanel.setLayout(null);
         frame.add(homePanel);
 
+        JLabel nameLabel = new JLabel("Enter your name:");
+        homePanel.add(nameLabel);
+        nameLabel.setBounds(240, 75, 200, 25);
+
+        nameField = new JTextField("");
+        homePanel.add(nameField);
+        nameField.setBounds(200, 100, 200, 25);
+
         JButton startButton = new JButton("Start");
         startButton.setBounds(200, 200, 200, 100);
         startButton.setFont(new FontUIResource("Calibri", Font.BOLD, 32));
+
         homePanel.add(startButton);
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                homePanel.setVisible(false);
+                if (nameField.getText().equals("")){
+                    JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 startGame();
+                try {
+                    Thread.sleep(500);
+
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
+                }
+                homePanel.setVisible(false);
+
             }
         });
 
+
+
         frame.setVisible(true);
-    }
-
-    public static void startGame() {
-        game.start();
-    }
-
-    public static void endGame() {
-        car.setVisible(false);
     }
 
 
@@ -321,7 +384,7 @@ public class Window extends Thread {
             label.setBounds(x, y, icon.getIconWidth(), icon.getIconHeight());
             GenerateObstacle.addObstacleMovement(label, x, car);
             try {
-                Thread.sleep(1750);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -332,8 +395,8 @@ public class Window extends Thread {
         return invincibleState;
     }
 
-    public static void invincibile(){
-        Thread invincible = new Thread(){
+    public static void invincibile() {
+        Thread invincible = new Thread() {
             public void run() {
                 try {
                     invincibleState = true;
@@ -360,7 +423,7 @@ public class Window extends Thread {
             }
         };
 
-        if (lifeCount > 0){
+        if (lifeCount > 0) {
             invincible.start();
 
         }
@@ -372,7 +435,6 @@ public class Window extends Thread {
         if (lifeCount < 1) {
             alive = false;
             lives.setText("x0");
-            System.out.println("dead");
         } else {
             lives.setText("x" + lifeCount);
         }
