@@ -1,3 +1,4 @@
+// TODO: make screen go to main menu || add leaderboard refresh on restart
 package RaceGame;
 
 import javax.imageio.ImageIO;
@@ -15,32 +16,31 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Enumeration;
 
 public class Window extends Thread {
     private static JFrame frame;
     private static JLabel car;
     private static int first = 0;
-    private int firstTime = 0;
     private static JMenu lives;
     private static int lifeCount = 3;
     private static JMenu time;
     private static JPanel menuPanel;
-    private static JMenu menu;
-    private static Date start;
     private static int pause;
     private static boolean alive;
-    public static JPanel homePanel;
+    private static JPanel homePanel;
+    private static JPanel endPanel;
+    private static JMenuBar menuBar;
     private static boolean invincibleState = false;
+    private static boolean windowRun = true;
+    private static int initialisedEndScreen = 0;
     private static int ended = 0;
+    private static JLabel endScore;
     private static JTextField nameField;
     private static final Thread game = new Thread() {
         public void run() {
-
             try {
-                JMenuBar menuBar = new JMenuBar();
+                menuBar = new JMenuBar();
                 menuBar.setSize(600, 200);
 
                 time = new JMenu("time: 00:00");
@@ -58,7 +58,7 @@ public class Window extends Thread {
                 menuBar.add(lives);
                 lives.setFocusable(false);
 
-                menu = new JMenu("Menu");
+                JMenu menu = new JMenu("Menu");
                 menu.addMenuListener(new MenuListener() {
                     @Override
                     public void menuSelected(MenuEvent e) {
@@ -117,8 +117,8 @@ public class Window extends Thread {
                 menuPanel = new JPanel();
                 menuPanel.setBounds(200, 0, 400, 200);
                 menuPanel.setBackground(Color.WHITE);
-                Border blackline = BorderFactory.createLineBorder(Color.black);
-                menuPanel.setBorder(blackline);
+                Border blackLine = BorderFactory.createLineBorder(Color.black);
+                menuPanel.setBorder(blackLine);
                 menuPanel.setVisible(false);
                 ResultSet rs = SQL.select();
                 int count = 1;
@@ -126,7 +126,6 @@ public class Window extends Thread {
                     assert rs != null;
                     if (!rs.next()) break;
                     if (count < 6) {
-                        System.out.println(rs.getString(2));
                         String name = rs.getString(2);
                         String score = String.valueOf(rs.getInt(3));
                         String date = String.valueOf(rs.getDate(4));
@@ -158,12 +157,11 @@ public class Window extends Thread {
                         }
                     }
                 });
-
             } catch (IOException | SQLException e) {
                 System.out.println("Error!");
                 System.out.println(e);
             }
-            System.out.println("a");
+
             alive = true;
 
             //fixes the topbar
@@ -172,56 +170,96 @@ public class Window extends Thread {
 
             Window s = new Window();
             s.start();
-
-            while (alive) {
-                if (checkAlive()) {
-                    System.out.println(getPause());
-
-                    if (getPause() == 0) {
-                        try {
-                            GenerateObstacle g = new GenerateObstacle();
-                            BufferedImage component = g.generate();
-                            Window.addNewComponent(new ImageIcon(component));
-
-                            if (!checkAlive()) {
-                                endGame();
-                            }
-
-                            //Thread.sleep(500);
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
-                    }
-                } else {
-                    endGame();
-                }
-            }
         }
     };
 
     public static void startGame() {
-        start = new Date();
+        //start = new Date();
         game.start();
     }
 
     public static void endGame() {
-        if (ended == 0) {
+        if (ended == 0 && initialisedEndScreen == 0) {
             car.setVisible(false);
-            Date now = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("ss");
-            String timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
-            Integer seconds1 = Integer.parseInt(timeNow);
-            sdf = new SimpleDateFormat("mm");
-            timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
-            Integer seconds2 = Integer.parseInt(timeNow) * 60;
+            menuBar.setVisible(false);
 
-            int totalseconds = seconds1 + seconds2;
-
-            Integer score = totalseconds * 100;
+            int score = Timer.getScore();
             String name = String.valueOf(nameField.getText());
             SQL.insert(name, score);
-            ended++;
+
+            Border blackLine = BorderFactory.createLineBorder(Color.black);
+
+            endPanel = new JPanel();
+            endPanel.setBorder(blackLine);
+            endPanel.setLocation(100, 50);
+            endPanel.setSize(400, 350);
+            endPanel.setBackground(Color.WHITE);
+            endPanel.setLayout(null);
+            frame.add(endPanel);
+
+            JLabel endTitle = new JLabel("You crashed!");
+            endTitle.setFont(new Font("Calibri", Font.BOLD, 46));
+            endPanel.add(endTitle);
+            endTitle.setBounds(75, 20, 400, 50);
+
+            endScore = new JLabel("You scored: " + score + "!");
+            endScore.setSize(400, 100);
+            endScore.setLocation(110, 100);
+            endScore.setFont(new Font("Calibri", Font.BOLD, 24));
+            endPanel.add(endScore);
+
+            JButton restartButton = new JButton("Play again");
+            restartButton.setBounds(25, 225, 175, 100);
+            restartButton.setFont(new Font("Calibri", Font.BOLD, 24));
+            endPanel.add(restartButton);
+            restartButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (nameField.getText().equals("")) {
+                        JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    lifeCount = 3;
+                    lives.setText("x3");
+                    windowRun = true;
+                    alive = true;
+                    car.setVisible(true);
+                    menuBar.setVisible(true);
+                    Window s = new Window();
+                    s.start();
+                    try {
+
+                        Thread.sleep(500);
+
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                    }
+                    endPanel.setVisible(false);
+                }
+            });
+
+            JButton menuButton = new JButton("Main menu");
+            menuButton.setBounds(210, 225, 175, 100);
+            menuButton.setFont(new Font("Calibri", Font.BOLD, 24));
+            endPanel.add(menuButton);
+
+            if (ended == 0) {
+                ended = 1;
+            }
+            windowRun = false;
+            initialisedEndScreen = 1;
+        } else {
+            int score = Timer.getScore();
+            String name = String.valueOf(nameField.getText());
+            SQL.insert(name, score);
+            endScore.setText("You scored: " + score + "!");
+            car.setVisible(false);
+            menuBar.setVisible(false);
+            endPanel.setVisible(true);
         }
+
     }
 
     public static int getPause() {
@@ -269,11 +307,12 @@ public class Window extends Thread {
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (nameField.getText().equals("")){
+                if (nameField.getText().equals("")) {
                     JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                ended = 0;
                 startGame();
                 try {
                     Thread.sleep(500);
@@ -287,7 +326,6 @@ public class Window extends Thread {
         });
 
 
-
         frame.setVisible(true);
     }
 
@@ -299,47 +337,36 @@ public class Window extends Thread {
     // zorgt ervoor dat de tijd wordt bijgehouden en dat deze update
     @Override
     public void run() {
-        while (true) {
-            int pauseState = Window.getPause();
-
-            while (pauseState == 1) {
-                try {
-                    start.setTime(start.getTime() + 100);
-                    Thread.sleep(100);
-                    pauseState = Window.getPause();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        Timer t = new Timer();
+        t.start();
+        while (windowRun) {
+            while (alive) {
+                if (checkAlive()) {
+                    if (getPause() == 0) {
+                        try {
+                            GenerateObstacle g = new GenerateObstacle();
+                            BufferedImage component = g.generate();
+                            Window.addNewComponent(new ImageIcon(component));
+                            //Thread.sleep(500);
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
                 }
             }
-            try {
-                Date now = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
-                String timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
-                setTime(timeNow);
-                Thread.sleep(1000);
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-
+        }
+        if (ended == 0) {
+            endGame();
         }
     }
 
-    //Deze methode i.p.v setText(), omdat revalidate() ervoor zorgt dat de obstacles niet goed meer werken.
-
-    public void setTime(String t) {
+    public static void setTime(String t) {
         if (checkAlive())
-            if (firstTime > 0) {
-                try {
-                    time.setText("time: " + t);
-                } catch (Exception e) {
-                    System.out.println(e);
-                }
-            } else {
-                firstTime++;
+            try {
+                time.setText("time: " + t);
+            } catch (Exception e) {
+                System.out.println(e);
             }
-
     }
 
     //Laat de auto bewegen
