@@ -1,4 +1,4 @@
-// TODO: make screen go to main menu
+// TODO: add sound || add background road || clean code
 package RaceGame;
 
 import javax.imageio.ImageIO;
@@ -18,123 +18,41 @@ import java.util.Enumeration;
 
 public class Window extends Thread {
     private static JFrame frame;
-    private static JLabel car;
-    private static int first = 0;
-    private static JMenu lives;
-    private static int lifeCount;
+    private static JMenuBar menuBar;
     private static JMenu time;
+    private static JMenu lives;
+    private static JTextField nameChange;
+    private static JLabel car;
+    private static JLabel endScore;
     private static JPanel menuPanel;
-    private static int pause;
-    private static boolean alive;
     private static JPanel homePanel;
     private static JPanel endPanel;
-    private static JMenuBar menuBar;
+    private static JTextField nameField;
     private static boolean invincibleState = false;
     private static boolean windowRun = true;
+    private static boolean alive;
     private static int initialisedEndScreen = 0;
+    private static int initialisedMain = 0;
     private static int ended;
-    private static JLabel endScore;
-    private static JTextField nameField;
+    private static int first = 0;
+    private static int lifeCount;
+    private static int pause;
     private static final Thread game = new Thread() {
         public void run() {
-            try {
-                menuBar = new JMenuBar();
-                menuBar.setSize(600, 200);
-
-                time = new JMenu("time: 00:00");
-                menuBar.add(time);
-                time.setFocusable(false);
-                menuBar.add(Box.createHorizontalGlue());
-
-                BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
-                JLabel heart = new JLabel(new ImageIcon(heartImg));
-                heart.setBounds(2, 2, 60, 51);
-                menuBar.add(heart);
-                heart.setFocusable(false);
-
-                lives = new JMenu("x3");
-                menuBar.add(lives);
-                lives.setFocusable(false);
-
-                JMenu menu = new JMenu("Menu");
-                menu.addMenuListener(new MenuListener() {
-                    @Override
-                    public void menuSelected(MenuEvent e) {
-                        if (getPause() == 0) {
-                            loadLeaderboard();
-
-                            pause++;
-                            menuPanel.setVisible(true);
-                            menuPanel.requestFocusInWindow();
-
-                        } else if (getPause() == 1) {
-                            pause--;
-                            menuPanel.setVisible(false);
-
-                        }
-
-                    }
-
-                    @Override
-                    public void menuDeselected(MenuEvent e) {
-                    }
-
-                    @Override
-                    public void menuCanceled(MenuEvent e) {
-
-                    }
-
-
-                });
-
-                menuBar.add(Box.createHorizontalGlue());
-                menuBar.add(menu);
-
-                frame.setJMenuBar(menuBar);
-
-                BufferedImage image = ImageIO.read(new File("src/RaceGame/images/car.png"));
-                car = new JLabel(new ImageIcon(image));
-
-                KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                        .addKeyEventDispatcher(e -> {
-                            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                                move(-10, 0, pause);
-
-                            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                                move(10, 0, pause);
-
-                            }
-                            return false;
-                        });
-
-
-                frame.add(car);
-                car.setBounds(250, 460, image.getWidth(), image.getHeight());
-
-                menuPanel = new JPanel();
-                menuPanel.setBounds(200, 0, 400, 200);
-                menuPanel.setBackground(Color.WHITE);
-                Border blackLine = BorderFactory.createLineBorder(Color.black);
-                menuPanel.setBorder(blackLine);
-                menuPanel.setVisible(false);
-                menuPanel.setLayout(null);
-                frame.add(menuPanel);
-
-            } catch (IOException e) {
-                System.out.println("Error!");
-                System.out.println(e);
-            }
 
             alive = true;
             ended = 0;
             lifeCount = 1;
+            windowRun = true;
 
-            //fixes the topbar
-            lives.setText("x3 ");
-            car.repaint();
+            menuBar.setVisible(true);
+            if (initialisedMain == 0) {
+                System.out.println("new Window()");
+                Window s = new Window();
+                s.start();
+                initialisedMain = 100;
+            }
 
-            Window s = new Window();
-            s.start();
         }
     };
 
@@ -179,10 +97,6 @@ public class Window extends Thread {
         }
     }
 
-    public static void startGame() {
-        game.start();
-    }
-
     public static void endGame() {
         if (ended == 0 && initialisedEndScreen == 0) {
             try {
@@ -213,16 +127,30 @@ public class Window extends Thread {
             endTitle.setBounds(75, 20, 400, 50);
 
             endScore = new JLabel("You scored: " + score + "!");
-            endScore.setSize(400, 100);
-            endScore.setLocation(110, 100);
-            endScore.setFont(new Font("Calibri", Font.BOLD, 24));
+            endScore.setSize(400, 40);
+            endScore.setLocation(110, 70);
+            endScore.setFont(new Font("Calibri", Font.BOLD, 30));
             endPanel.add(endScore);
 
+            JLabel nameChangeText = new JLabel("If you wish to change your name, enter a new one here: ");
+            nameChangeText.setSize(400, 40);
+            nameChangeText.setLocation(10, 120);
+            nameChangeText.setFont(new Font("Calibri", Font.BOLD, 16));
+            endPanel.add(nameChangeText);
+
+
+            nameChange = new JTextField("");
+            endPanel.add(nameChange);
+            nameChange.setBounds(25, 175, 350, 40);
+
             JButton restartButton = new JButton("Play again");
-            restartButton.setBounds(25, 225, 175, 100);
+            restartButton.setBounds(25, 225, 350, 100);
             restartButton.setFont(new Font("Calibri", Font.BOLD, 24));
             endPanel.add(restartButton);
             restartButton.addActionListener(e -> {
+                if (!nameChange.getText().equals("")){
+                    nameField.setText(nameChange.getText());
+                }
                 if (nameField.getText().equals("")) {
                     JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
                             JOptionPane.ERROR_MESSAGE);
@@ -246,10 +174,7 @@ public class Window extends Thread {
                 endPanel.setVisible(false);
             });
 
-            JButton menuButton = new JButton("Main menu");
-            menuButton.setBounds(210, 225, 175, 100);
-            menuButton.setFont(new Font("Calibri", Font.BOLD, 24));
-            endPanel.add(menuButton);
+
 
             if (ended == 0) {
                 ended = 1;
@@ -263,6 +188,7 @@ public class Window extends Thread {
             SQL.insert(name, score);
             ended = 1;
             windowRun = false;
+            nameChange.setText("");
             endScore.setText("You scored: " + score + "!");
             car.setVisible(false);
             menuBar.setVisible(false);
@@ -319,8 +245,10 @@ public class Window extends Thread {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
             ended = 0;
-            startGame();
+            game.start();
+
             try {
                 Thread.sleep(500);
 
@@ -330,6 +258,99 @@ public class Window extends Thread {
             homePanel.setVisible(false);
 
         });
+
+        menuBar = new JMenuBar();
+        menuBar.setSize(600, 200);
+
+        time = new JMenu("time: 00:00");
+        menuBar.add(time);
+        time.setFocusable(false);
+        menuBar.add(Box.createHorizontalGlue());
+
+        try {
+            BufferedImage heartImg = ImageIO.read(new File("src/RaceGame/images/heart.png"));
+            JLabel heart = new JLabel(new ImageIcon(heartImg));
+            heart.setBounds(2, 2, 60, 51);
+            menuBar.add(heart);
+            heart.setFocusable(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        lives = new JMenu("x3");
+        menuBar.add(lives);
+        lives.setFocusable(false);
+
+        JMenu menu = new JMenu("Menu");
+        menu.addMenuListener(new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent e) {
+                if (getPause() == 0) {
+                    loadLeaderboard();
+
+                    pause++;
+                    menuPanel.setVisible(true);
+                    menuPanel.requestFocusInWindow();
+
+                } else if (getPause() == 1) {
+                    pause--;
+                    menuPanel.setVisible(false);
+
+                }
+
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent e) {
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+
+            }
+
+
+        });
+
+        menuBar.add(Box.createHorizontalGlue());
+        menuBar.add(menu);
+
+        frame.setJMenuBar(menuBar);
+
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(new File("src/RaceGame/images/car.png"));
+            car = new JLabel(new ImageIcon(image));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventDispatcher(e -> {
+                    if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                        move(-10, 0, pause);
+
+                    } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                        move(10, 0, pause);
+
+                    }
+                    return false;
+                });
+
+
+        frame.add(car);
+        car.setBounds(250, 460, image.getWidth(), image.getHeight());
+
+        menuPanel = new JPanel();
+        menuPanel.setBounds(200, 0, 400, 200);
+        menuPanel.setBackground(Color.WHITE);
+        Border blackLine = BorderFactory.createLineBorder(Color.black);
+        menuPanel.setBorder(blackLine);
+        menuPanel.setVisible(false);
+        menuPanel.setLayout(null);
+        frame.add(menuPanel);
+        menuBar.setVisible(false);
 
 
         frame.setVisible(true);
@@ -346,12 +367,11 @@ public class Window extends Thread {
         Timer t = new Timer();
         t.start();
         while (windowRun) {
-            System.out.println("r");
             while (alive) {
-                System.out.println("a");
+                // op een of andere manier fixt deze System.out.println() een bug met het pauzeren, zonder deze regel stop het genereren van obstacles \o/
+                System.out.println();
                 ended = 0;
                 if (getPause() == 0) {
-                    System.out.println("paused");
                     try {
                         GenerateObstacle g = new GenerateObstacle();
                         BufferedImage component = g.generate();
