@@ -14,8 +14,6 @@ public class Timer extends Thread {
         start = new Date();
         running = true;
         while(running){
-            System.out.println(!Window.checkAlive());
-
             int pauseState = Window.getPause();
             while (pauseState == 1) {
                 try {

@@ -1,4 +1,4 @@
-// TODO: make screen go to main menu || add leaderboard refresh on restart
+// TODO: make screen go to main menu
 package RaceGame;
 
 import javax.imageio.ImageIO;
@@ -8,8 +8,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -23,7 +21,7 @@ public class Window extends Thread {
     private static JLabel car;
     private static int first = 0;
     private static JMenu lives;
-    private static int lifeCount = 3;
+    private static int lifeCount;
     private static JMenu time;
     private static JPanel menuPanel;
     private static int pause;
@@ -34,7 +32,7 @@ public class Window extends Thread {
     private static boolean invincibleState = false;
     private static boolean windowRun = true;
     private static int initialisedEndScreen = 0;
-    private static int ended = 0;
+    private static int ended;
     private static JLabel endScore;
     private static JTextField nameField;
     private static final Thread game = new Thread() {
@@ -63,6 +61,8 @@ public class Window extends Thread {
                     @Override
                     public void menuSelected(MenuEvent e) {
                         if (getPause() == 0) {
+                            loadLeaderboard();
+
                             pause++;
                             menuPanel.setVisible(true);
                             menuPanel.requestFocusInWindow();
@@ -96,18 +96,15 @@ public class Window extends Thread {
                 car = new JLabel(new ImageIcon(image));
 
                 KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                        .addKeyEventDispatcher(new KeyEventDispatcher() {
-                            @Override
-                            public boolean dispatchKeyEvent(KeyEvent e) {
-                                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                                    move(-10, 0, pause);
+                        .addKeyEventDispatcher(e -> {
+                            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                                move(-10, 0, pause);
 
-                                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                                    move(10, 0, pause);
+                            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                                move(10, 0, pause);
 
-                                }
-                                return false;
                             }
+                            return false;
                         });
 
 
@@ -120,49 +117,17 @@ public class Window extends Thread {
                 Border blackLine = BorderFactory.createLineBorder(Color.black);
                 menuPanel.setBorder(blackLine);
                 menuPanel.setVisible(false);
-                ResultSet rs = SQL.select();
-                int count = 1;
-                while (true) {
-                    assert rs != null;
-                    if (!rs.next()) break;
-                    if (count < 6) {
-                        String name = rs.getString(2);
-                        String score = String.valueOf(rs.getInt(3));
-                        String date = String.valueOf(rs.getDate(4));
-                        JLabel plate = new JLabel(count + ". " + name + " | " + score + " | " + date);
-                        menuPanel.add(plate);
-                        plate.setBounds(10, count * 20, 400, 100);
-                        count++;
-                    }
-                }
-
                 menuPanel.setLayout(null);
                 frame.add(menuPanel);
 
-                JButton a = new JButton("X");
-                a.setBounds(130, 10, 45, 30);
-                menuPanel.add(a);
-                a.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if (getPause() == 0) {
-                            pause++;
-                            menuPanel.setVisible(true);
-                            menuPanel.requestFocusInWindow();
-
-                        } else if (getPause() == 1) {
-                            pause--;
-                            menuPanel.setVisible(false);
-
-                        }
-                    }
-                });
-            } catch (IOException | SQLException e) {
+            } catch (IOException e) {
                 System.out.println("Error!");
                 System.out.println(e);
             }
 
             alive = true;
+            ended = 0;
+            lifeCount = 1;
 
             //fixes the topbar
             lives.setText("x3 ");
@@ -173,13 +138,58 @@ public class Window extends Thread {
         }
     };
 
+    public static void loadLeaderboard() {
+        menuPanel.removeAll();
+        JButton a = new JButton("X");
+        a.setBounds(130, 10, 45, 30);
+        menuPanel.add(a);
+        a.addActionListener(e -> {
+            if (getPause() == 0) {
+                pause++;
+                menuPanel.setVisible(true);
+                menuPanel.requestFocusInWindow();
+
+            } else if (getPause() == 1) {
+                pause--;
+                menuPanel.setVisible(false);
+
+            }
+        });
+        System.out.println("asd");
+        try {
+            ResultSet rs = SQL.select();
+            int count = 1;
+            while (true) {
+                assert rs != null;
+
+                if (!rs.next()) break;
+
+                if (count < 6) {
+                    String name = rs.getString(2);
+                    String score = String.valueOf(rs.getInt(3));
+                    String date = String.valueOf(rs.getDate(4));
+                    JLabel plate = new JLabel(count + ". " + name + " | " + score + " | " + date);
+                    menuPanel.add(plate);
+                    plate.setBounds(10, count * 20, 400, 100);
+                    count++;
+                }
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
     public static void startGame() {
-        //start = new Date();
         game.start();
     }
 
     public static void endGame() {
         if (ended == 0 && initialisedEndScreen == 0) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             car.setVisible(false);
             menuBar.setVisible(false);
 
@@ -212,32 +222,28 @@ public class Window extends Thread {
             restartButton.setBounds(25, 225, 175, 100);
             restartButton.setFont(new Font("Calibri", Font.BOLD, 24));
             endPanel.add(restartButton);
-            restartButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (nameField.getText().equals("")) {
-                        JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    lifeCount = 3;
-                    lives.setText("x3");
-                    windowRun = true;
-                    alive = true;
-                    car.setVisible(true);
-                    menuBar.setVisible(true);
-                    Window s = new Window();
-                    s.start();
-                    try {
-
-                        Thread.sleep(500);
-
-                    } catch (InterruptedException interruptedException) {
-                        interruptedException.printStackTrace();
-                    }
-                    endPanel.setVisible(false);
+            restartButton.addActionListener(e -> {
+                if (nameField.getText().equals("")) {
+                    JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
+                lifeCount = 1;
+                lives.setText("x3");
+                windowRun = true;
+                alive = true;
+                car.setVisible(true);
+                menuBar.setVisible(true);
+
+                Window s = new Window();
+                s.start();
+                try {
+                    Thread.sleep(500);
+
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
+                }
+                endPanel.setVisible(false);
             });
 
             JButton menuButton = new JButton("Main menu");
@@ -250,10 +256,13 @@ public class Window extends Thread {
             }
             windowRun = false;
             initialisedEndScreen = 1;
+            endPanel.repaint();
         } else {
             int score = Timer.getScore();
             String name = String.valueOf(nameField.getText());
             SQL.insert(name, score);
+            ended = 1;
+            windowRun = false;
             endScore.setText("You scored: " + score + "!");
             car.setVisible(false);
             menuBar.setVisible(false);
@@ -304,25 +313,22 @@ public class Window extends Thread {
         startButton.setFont(new FontUIResource("Calibri", Font.BOLD, 32));
 
         homePanel.add(startButton);
-        startButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (nameField.getText().equals("")) {
-                    JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                ended = 0;
-                startGame();
-                try {
-                    Thread.sleep(500);
-
-                } catch (InterruptedException interruptedException) {
-                    interruptedException.printStackTrace();
-                }
-                homePanel.setVisible(false);
-
+        startButton.addActionListener(e -> {
+            if (nameField.getText().equals("")) {
+                JOptionPane.showMessageDialog(new JFrame(), "You have to enter your name first!", "Error!",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            ended = 0;
+            startGame();
+            try {
+                Thread.sleep(500);
+
+            } catch (InterruptedException interruptedException) {
+                interruptedException.printStackTrace();
+            }
+            homePanel.setVisible(false);
+
         });
 
 
@@ -340,24 +346,26 @@ public class Window extends Thread {
         Timer t = new Timer();
         t.start();
         while (windowRun) {
+            System.out.println("r");
             while (alive) {
-                if (checkAlive()) {
-                    if (getPause() == 0) {
-                        try {
-                            GenerateObstacle g = new GenerateObstacle();
-                            BufferedImage component = g.generate();
-                            Window.addNewComponent(new ImageIcon(component));
-                            //Thread.sleep(500);
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
+                System.out.println("a");
+                ended = 0;
+                if (getPause() == 0) {
+                    System.out.println("paused");
+                    try {
+                        GenerateObstacle g = new GenerateObstacle();
+                        BufferedImage component = g.generate();
+                        Window.addNewComponent(new ImageIcon(component));
+                    } catch (Exception e) {
+                        System.out.println(e);
                     }
                 }
             }
+            if (ended == 0) {
+                endGame();
+            }
         }
-        if (ended == 0) {
-            endGame();
-        }
+
     }
 
     public static void setTime(String t) {
@@ -423,32 +431,30 @@ public class Window extends Thread {
     }
 
     public static void invincibile() {
-        Thread invincible = new Thread() {
-            public void run() {
-                try {
-                    invincibleState = true;
-                    car.setVisible(false);
-                    Thread.sleep(250);
-                    car.setVisible(true);
-                    Thread.sleep(250);
-                    car.setVisible(false);
-                    Thread.sleep(250);
-                    car.setVisible(true);
-                    Thread.sleep(250);
-                    car.setVisible(false);
-                    Thread.sleep(250);
-                    car.setVisible(true);
-                    Thread.sleep(250);
-                    car.setVisible(false);
-                    Thread.sleep(250);
-                    car.setVisible(true);
-                    Thread.sleep(250);
-                    invincibleState = false;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Thread invincible = new Thread(() -> {
+            try {
+                invincibleState = true;
+                car.setVisible(false);
+                Thread.sleep(250);
+                car.setVisible(true);
+                Thread.sleep(250);
+                car.setVisible(false);
+                Thread.sleep(250);
+                car.setVisible(true);
+                Thread.sleep(250);
+                car.setVisible(false);
+                Thread.sleep(250);
+                car.setVisible(true);
+                Thread.sleep(250);
+                car.setVisible(false);
+                Thread.sleep(250);
+                car.setVisible(true);
+                Thread.sleep(250);
+                invincibleState = false;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
+        });
 
         if (lifeCount > 0) {
             invincible.start();

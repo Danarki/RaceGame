@@ -91,11 +91,6 @@ public class GenerateObstacle {
                             }
                         }
 
-                        if (!Window.checkAlive()) {
-                            Window.endGame();
-
-                        }
-
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
