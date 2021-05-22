@@ -3,26 +3,21 @@ package RaceGame;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Time;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class GenerateObstacle {
 
-    // maakt een obstacle aan
+    // Maakt een van de 3 Obstacles aan
     public BufferedImage generate() {
         int rand = (int) Math.floor(Math.random() * 4);
         Obstacle o = new Obstacle(rand);
-        BufferedImage component = o.image;
-        return component;
+        return o.image;
     }
 
 
-    //voegt de beweging toe aan het aangemaakte obstacle
+    // Voegt de beweging toe aan het aangemaakte Obstacle
     public static void addObstacleMovement(JLabel obstacle, int x, JLabel car) {
         if (Window.checkAlive()) {
 
@@ -75,6 +70,7 @@ public class GenerateObstacle {
                                 BufferedImage explosion = ImageIO.read(new File("src/RaceGame/images/explosion.png"));
                                 JLabel explode = new JLabel(new ImageIcon(explosion));
                                 car.getParent().add(explode);
+                                Audio.explode();
                                 explode.setBounds(car.getX() - 20, car.getY() - 100, explosion.getWidth(), explosion.getHeight());
                                 try {
                                     Window.depleteLives();
@@ -99,7 +95,7 @@ public class GenerateObstacle {
                     }
                 }
 
-
+                // Detecteerd of het huidige Obstacle botst met de auto
                 private boolean collisionDetect(int carX, int carY, int carWidth, int carHeigth, int obstacleX, int obstacleY, int obstacleWidth, int obstacleHeight) {
                     return carX < obstacleX + obstacleWidth &&
                             carX + carWidth > obstacleX &&
@@ -109,10 +105,6 @@ public class GenerateObstacle {
 
             };
             thread1.start();
-
-
         }
-
-
     }
 }

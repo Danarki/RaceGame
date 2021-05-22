@@ -8,11 +8,13 @@ public class Timer extends Thread {
     public boolean running;
     public static int score;
 
+    // Thread die de tijd en score bijhoudt
     @Override
     public void run() {
         score = 0;
         start = new Date();
         running = true;
+
         while(running){
             int pauseState = Window.getPause();
             while (pauseState == 1) {
@@ -26,6 +28,7 @@ public class Timer extends Thread {
             }
 
             Date now = new Date();
+
             SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
             String timeNow = sdf.format(new Date((now.getTime()) - start.getTime()));
             Window.setTime(timeNow);
@@ -33,6 +36,7 @@ public class Timer extends Thread {
             sdf = new SimpleDateFormat("ss");
             timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
             int seconds1 = Integer.parseInt(timeNow);
+
             sdf = new SimpleDateFormat("mm");
             timeNow = sdf.format(new Date((now.getTime() - 1000) - start.getTime()));
             int seconds2 = Integer.parseInt(timeNow) * 60;
@@ -54,6 +58,7 @@ public class Timer extends Thread {
         }
     }
 
+    // Score ophalen
     public static int getScore() {
         return score;
     }

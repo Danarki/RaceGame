@@ -6,6 +6,7 @@ import java.util.Date;
 
 public class SQL {
 
+    // Maakt connectie met de database
     public static Connection connect() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
@@ -18,8 +19,10 @@ public class SQL {
         }
     }
 
+    // Haalt de scores op uit de database
     public static ResultSet select(){
         Connection con = connect();
+
         try {
             assert con != null;
             Statement stmt = con.createStatement();
@@ -31,16 +34,18 @@ public class SQL {
         return null;
     }
 
+    // Voegt een score toe aan de database
     public static void insert(String name, Integer score){
         Connection con = connect();
+
         try {
             assert con != null;
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String dateFormatted = sdf.format(date);
 
-
             String query = "insert into score (username, score, date) values ('" + name + "', " + score + ", '" + dateFormatted + "')";
+
             PreparedStatement preparedStmt = con.prepareStatement(query);
             preparedStmt.execute();
 
@@ -48,10 +53,5 @@ public class SQL {
         } catch (Exception e){
             System.out.println(e);
         }
-    }
-
-    public static void main(String[] args) {
-        insert("Danarki", 1500);
-        select();
     }
 }

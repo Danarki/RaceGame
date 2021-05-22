@@ -1,4 +1,3 @@
-// TODO: add sound || add background road || clean code
 package RaceGame;
 
 import javax.imageio.ImageIO;
@@ -31,31 +30,33 @@ public class Window extends Thread {
     private static boolean invincibleState = false;
     private static boolean windowRun = true;
     private static boolean alive;
+    private static boolean firstComponent = true;
     private static int initialisedEndScreen = 0;
     private static int initialisedMain = 0;
     private static int ended;
-    private static int first = 0;
     private static int lifeCount;
     private static int pause;
+
+    // De Thread voor de het starten van de game
     private static final Thread game = new Thread() {
         public void run() {
-
+            Audio.playing();
             alive = true;
             ended = 0;
-            lifeCount = 1;
+            lifeCount = 3;
             windowRun = true;
 
             menuBar.setVisible(true);
             if (initialisedMain == 0) {
-                System.out.println("new Window()");
                 Window s = new Window();
                 s.start();
-                initialisedMain = 100;
+                initialisedMain = 1;
             }
 
         }
     };
 
+    // Haalt het leaderboard op en refresht deze
     public static void loadLeaderboard() {
         menuPanel.removeAll();
         JButton a = new JButton("X");
@@ -73,7 +74,7 @@ public class Window extends Thread {
 
             }
         });
-        System.out.println("asd");
+
         try {
             ResultSet rs = SQL.select();
             int count = 1;
@@ -92,15 +93,18 @@ public class Window extends Thread {
                     count++;
                 }
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
         }
     }
 
+    // Beïndigd het huidige spel en laat het eindscherm zien
     public static void endGame() {
+        Audio.gameover();
+
         if (ended == 0 && initialisedEndScreen == 0) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(750);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -156,40 +160,48 @@ public class Window extends Thread {
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                lifeCount = 1;
+                lifeCount = 3;
                 lives.setText("x3");
                 windowRun = true;
                 alive = true;
                 car.setVisible(true);
                 menuBar.setVisible(true);
 
+                Audio.gameoverStop();
+                Audio.playing();
+
                 Window s = new Window();
                 s.start();
+
                 try {
                     Thread.sleep(500);
 
                 } catch (InterruptedException interruptedException) {
                     interruptedException.printStackTrace();
                 }
+
                 endPanel.setVisible(false);
             });
-
-
 
             if (ended == 0) {
                 ended = 1;
             }
+
             windowRun = false;
             initialisedEndScreen = 1;
             endPanel.repaint();
+
         } else {
             int score = Timer.getScore();
             String name = String.valueOf(nameField.getText());
             SQL.insert(name, score);
+
             ended = 1;
             windowRun = false;
+
             nameChange.setText("");
             endScore.setText("You scored: " + score + "!");
+
             car.setVisible(false);
             menuBar.setVisible(false);
             endPanel.setVisible(true);
@@ -201,8 +213,10 @@ public class Window extends Thread {
         return pause;
     }
 
+    // Zet een globaal font over de hele applicatie
     public static void setUIFont(javax.swing.plaf.FontUIResource f) {
         Enumeration<Object> keys = UIManager.getDefaults().keys();
+
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
             Object value = UIManager.get(key);
@@ -211,8 +225,10 @@ public class Window extends Thread {
         }
     }
 
-
+    // init() start de game, deze run je dus ook als je een nieuwe window wilt maken.
     public static void init() {
+        Audio.title();
+
         frame = new JFrame("Super coole race game :O");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setUIFont(new FontUIResource("Calibri", Font.BOLD, 16));
@@ -247,6 +263,8 @@ public class Window extends Thread {
             }
 
             ended = 0;
+            Audio.titleStop();
+
             game.start();
 
             try {
@@ -255,6 +273,7 @@ public class Window extends Thread {
             } catch (InterruptedException interruptedException) {
                 interruptedException.printStackTrace();
             }
+
             homePanel.setVisible(false);
 
         });
@@ -292,13 +311,10 @@ public class Window extends Thread {
                     pause++;
                     menuPanel.setVisible(true);
                     menuPanel.requestFocusInWindow();
-
                 } else if (getPause() == 1) {
                     pause--;
                     menuPanel.setVisible(false);
-
                 }
-
             }
 
             @Override
@@ -340,6 +356,7 @@ public class Window extends Thread {
 
 
         frame.add(car);
+        assert image != null;
         car.setBounds(250, 460, image.getWidth(), image.getHeight());
 
         menuPanel = new JPanel();
@@ -361,16 +378,18 @@ public class Window extends Thread {
         return alive;
     }
 
-    // zorgt ervoor dat de tijd wordt bijgehouden en dat deze update
+    // Zorgt ervoor dat de tijd wordt bijgehouden en dat deze update
     @Override
     public void run() {
         Timer t = new Timer();
         t.start();
+
         while (windowRun) {
             while (alive) {
-                // op een of andere manier fixt deze System.out.println() een bug met het pauzeren, zonder deze regel stop het genereren van obstacles \o/
+                // Op een of andere manier fixt deze System.out.println() een bug met het pauzeren, zonder deze regel stop het genereren van obstacles en blijft de game in een oneindige loop  ¯\_(ツ)_/¯
                 System.out.println();
                 ended = 0;
+
                 if (getPause() == 0) {
                     try {
                         GenerateObstacle g = new GenerateObstacle();
@@ -388,6 +407,7 @@ public class Window extends Thread {
 
     }
 
+    // Zet de tijd binnen de timer op de meegegeven string-waarde
     public static void setTime(String t) {
         if (checkAlive())
             try {
@@ -397,8 +417,7 @@ public class Window extends Thread {
             }
     }
 
-    //Laat de auto bewegen
-
+    // Laat de auto bewegen
     public static void move(int deltaX, int deltaY, int pause) {
         if (pause == 0) {
             int componentWidth = car.getSize().width;
@@ -408,13 +427,12 @@ public class Window extends Thread {
             int parentWidth = parentSize.width;
             int parentHeight = parentSize.height;
 
-            //zorgt ervoor dat de auto niet buiten het scherm kan bewegen
+            // Zorgt ervoor dat de auto niet buiten het scherm kan bewegen
             int nextX = Math.max(car.getLocation().x + deltaX, 0);
 
             if (nextX + componentWidth > parentWidth) {
                 nextX = parentWidth - componentWidth;
             }
-
 
             int nextY = Math.max(car.getLocation().y + deltaY, 0);
 
@@ -426,18 +444,23 @@ public class Window extends Thread {
         }
     }
 
+    // Voegt een nieuw component toe aan het scherm
     public static void addNewComponent(ImageIcon icon) {
         int x = (int) Math.floor(Math.random() * (600 + 1)) - 50;
         int y = 0;
-        if (first == 0) {
-            first++;
+
+        if (firstComponent) {
+            firstComponent = false;
         } else {
             JLabel label = new JLabel(icon);
             frame.add(label);
+
             int componentHeight = icon.getIconHeight();
             y = y - componentHeight;
             label.setBounds(x, y, icon.getIconWidth(), icon.getIconHeight());
+
             GenerateObstacle.addObstacleMovement(label, x, car);
+
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -450,26 +473,17 @@ public class Window extends Thread {
         return invincibleState;
     }
 
+    // Zorgt ervoor dat de auto "invincible is", kan niet nogmaals worden beschadigd door een obstakel voor een klein moment
     public static void invincibile() {
         Thread invincible = new Thread(() -> {
             try {
                 invincibleState = true;
-                car.setVisible(false);
-                Thread.sleep(250);
-                car.setVisible(true);
-                Thread.sleep(250);
-                car.setVisible(false);
-                Thread.sleep(250);
-                car.setVisible(true);
-                Thread.sleep(250);
-                car.setVisible(false);
-                Thread.sleep(250);
-                car.setVisible(true);
-                Thread.sleep(250);
-                car.setVisible(false);
-                Thread.sleep(250);
-                car.setVisible(true);
-                Thread.sleep(250);
+                for (int x = 0; x < 5; x++){
+                    car.setVisible(false);
+                    Thread.sleep(250);
+                    car.setVisible(true);
+                    Thread.sleep(250);
+                }
                 invincibleState = false;
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -478,10 +492,10 @@ public class Window extends Thread {
 
         if (lifeCount > 0) {
             invincible.start();
-
         }
     }
 
+    // Haalt er een leven af en checkt of dit de laatste is
     public static void depleteLives() {
         lifeCount--;
 

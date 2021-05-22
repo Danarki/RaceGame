@@ -4,11 +4,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 public class Obstacle {
     BufferedImage image;
 
+    // Maakt een Obstacle aan die met de willekeurige meegegeven waarde het plaatje bepaald
     public Obstacle(int type){
         if (type == 1){
             try {
