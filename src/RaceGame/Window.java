@@ -227,6 +227,7 @@ public class Window extends Thread {
 
     // init() start de game, deze run je dus ook als je een nieuwe window wilt maken.
     public static void init() {
+        Server.piConnect();
         Audio.title();
 
         frame = new JFrame("Super coole race game :O");
